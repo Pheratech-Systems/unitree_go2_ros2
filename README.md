@@ -41,8 +41,7 @@ CHAMP (Coupled Hybrid Automata for Mobile Platforms) is an open-source developme
 
 ## System Requirements
 
-- Ubuntu 24.04
-- ROS 2 Jazzy
+- Ubuntu 24.04 with ROS 2 Jazzy, or Ubuntu 22.04 with ROS 2 Humble (see [ROS 2 Humble](#ros-2-humble-ubuntu-2204))
 - Gazebo Sim Harmonic
 
 ## Installation
@@ -80,6 +79,39 @@ rosdep install --from-paths src --ignore-src -r -y
 ```bash
 cd ~/ros2_ws
 colcon build
+source install/setup.bash
+```
+
+### ROS 2 Humble (Ubuntu 22.04)
+
+Humble is supported with Gazebo Harmonic, a non-default pairing, so a few steps differ:
+
+- `ros_gz` comes from the `ros-humble-ros-gzharmonic` packages. The default `ros-humble-ros-gz` packages target Gazebo Fortress and conflict with them.
+- `gz_ros2_control` has no Humble binary built against Harmonic, so it is built from source with `GZ_VERSION=harmonic`.
+- `rosdep` must skip the `ros_gz` and `gz_ros2_control` keys, or it tries to install the Fortress builds.
+
+```bash
+# Gazebo Harmonic (packages.osrfoundation.org) and its ROS bridge
+sudo apt install gz-harmonic ros-humble-ros-gzharmonic
+
+# ROS dependencies
+sudo apt install ros-humble-ros2-control ros-humble-ros2-controllers \
+  ros-humble-xacro ros-humble-robot-localization ros-humble-realsense2-description \
+  ros-humble-velodyne
+
+# Sources: this repo and the humble branch of gz_ros2_control
+mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
+git clone https://github.com/khaledgabr77/unitree_go2_ros2
+git clone -b humble https://github.com/ros-controls/gz_ros2_control
+
+export GZ_VERSION=harmonic   # also add this to ~/.bashrc
+
+cd ~/ros2_ws
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y \
+  --skip-keys "ros_gz_sim ros_gz_bridge ros_gz_interfaces gz_ros2_control gz-sim8 gz-plugin2 ignition-gazebo6 ignition-plugin"
+
+colcon build --symlink-install --packages-skip gz_ros2_control_demos ign_ros2_control ign_ros2_control_demos gz_ros2_control_tests
 source install/setup.bash
 ```
 

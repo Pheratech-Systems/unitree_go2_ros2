@@ -55,8 +55,9 @@ class FootContactsBridge : public rclcpp::Node
 
         foot_contacts_publisher_ = this->create_publisher<champ_msgs::msg::ContactsStamped>("foot_contacts", 10);
 
-        publish_timer_ = this->create_timer(std::chrono::duration<double>(1.0 / publish_rate_),
-                                            std::bind(&FootContactsBridge::publishContacts_, this));
+        // free function rather than Node::create_timer, which Humble lacks; it still follows sim time
+        publish_timer_ = rclcpp::create_timer(this, this->get_clock(), rclcpp::Duration::from_seconds(1.0 / publish_rate_),
+                                              std::bind(&FootContactsBridge::publishContacts_, this));
     }
 
   private:

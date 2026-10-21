@@ -3,9 +3,11 @@ import os
 import launch_ros
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node, SetParameter
+from launch_ros.parameter_descriptions import ParameterValue
 
 from launch import LaunchDescription
 from launch.actions import (
+    AppendEnvironmentVariable,
     DeclareLaunchArgument,
     ExecuteProcess,
     IncludeLaunchDescription,
@@ -98,6 +100,8 @@ def generate_launch_description():
         " disable_lidar_l1:=", LaunchConfiguration("disable_lidar_l1"),
         " disable_velodyne_lidar:=", LaunchConfiguration("disable_velodyne_lidar"),
     ])
+    # Keep the URDF a plain string, Humble's launch_ros otherwise tries to parse it as YAML
+    description_command = ParameterValue(description_command, value_type=str)
     robot_description = {"robot_description": description_command}
 
     robot_state_publisher_node = Node(
@@ -202,6 +206,12 @@ def generate_launch_description():
     )
     
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
+
+    # Let Gazebo resolve model://realsense2_description/... meshes, Humble's gz_sim.launch.py does not add ROS share paths
+    gz_resource_path = AppendEnvironmentVariable(
+        'GZ_SIM_RESOURCE_PATH',
+        os.path.dirname(get_package_share_directory('realsense2_description')),
+    )
     
     # Setup to launch the simulator and Gazebo world
     gz_sim = IncludeLaunchDescription(
@@ -355,6 +365,7 @@ def generate_launch_description():
             SetParameter(name="use_sim_time", value=use_sim_time),
 
             # Gazebo and robot nodes first
+            gz_resource_path,
             gz_sim,
             robot_state_publisher_node,
             gazebo_spawn_robot,
