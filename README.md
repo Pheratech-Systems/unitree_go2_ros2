@@ -90,6 +90,8 @@ Humble is supported with Gazebo Harmonic, a non-default pairing, so a few steps 
 - `gz_ros2_control` has no Humble binary built against Harmonic, so it is built from source with `GZ_VERSION=harmonic`.
 - `rosdep` must skip the `ros_gz` and `gz_ros2_control` keys, or it tries to install the Fortress builds.
 
+#### 1. Install dependencies
+
 ```bash
 # Gazebo Harmonic (packages.osrfoundation.org) and its ROS bridge
 sudo apt install gz-harmonic ros-humble-ros-gzharmonic
@@ -98,22 +100,51 @@ sudo apt install gz-harmonic ros-humble-ros-gzharmonic
 sudo apt install ros-humble-ros2-control ros-humble-ros2-controllers \
   ros-humble-xacro ros-humble-robot-localization ros-humble-realsense2-description \
   ros-humble-velodyne
+```
 
-# Sources: this repo and the humble branch of gz_ros2_control
-mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
-git clone https://github.com/khaledgabr77/unitree_go2_ros2
+#### 2. Build gz_ros2_control against Harmonic
+
+Build it once in its own workspace:
+
+```bash
+export GZ_VERSION=harmonic
+mkdir -p ~/gz_ros2_control_ws/src && cd ~/gz_ros2_control_ws/src
 git clone -b humble https://github.com/ros-controls/gz_ros2_control
+cd ~/gz_ros2_control_ws
+source /opt/ros/humble/setup.bash
+colcon build --packages-select gz_ros2_control
+```
 
-export GZ_VERSION=harmonic   # also add this to ~/.bashrc
+Then add these two lines to `~/.bashrc`, after `source /opt/ros/humble/setup.bash`, and open a new terminal:
 
-cd ~/ros2_ws
+```bash
+export GZ_VERSION=harmonic
+source ~/gz_ros2_control_ws/install/setup.bash
+```
+
+Sourcing this workspace also puts the plugin on `GZ_SIM_SYSTEM_PLUGIN_PATH`, so Gazebo can load it.
+
+#### 3. Build this repo
+
+```bash
+git clone -b humble-support https://github.com/Pheratech-Systems/unitree_go2_ros2 ~/unitree_go2_ros2
+cd ~/unitree_go2_ros2
 rosdep update
-rosdep install --from-paths src --ignore-src -r -y \
-  --skip-keys "ros_gz_sim ros_gz_bridge ros_gz_interfaces gz_ros2_control gz-sim8 gz-plugin2 ignition-gazebo6 ignition-plugin"
-
-colcon build --symlink-install --packages-skip gz_ros2_control_demos ign_ros2_control ign_ros2_control_demos gz_ros2_control_tests
+rosdep install --from-paths . --ignore-src -r -y \
+  --skip-keys "ros_gz_sim ros_gz_bridge ros_gz_interfaces gz_ros2_control"
+colcon build --symlink-install
 source install/setup.bash
 ```
+
+#### 4. Launch
+
+```bash
+ros2 launch unitree_go2_sim unitree_go2_launch.py
+```
+
+About 20–30 seconds after launch, `joint_states_controller` and `joint_group_effort_controller` should be listed as `active`.
+If the spawners keep waiting for `/controller_manager/list_controllers` and the robot collapses, another Gazebo server is probably still running (check with `pgrep -af "gz sim"`).
+Stop it and launch again, otherwise the robot can be spawned into that server, which may not have the plugin.
 
 ## Usage
 
