@@ -33,7 +33,7 @@ def generate_launch_description():
     gait_config = os.path.join(unitree_go2_sim, "config/gait/gait.yaml")
     links_config = os.path.join(unitree_go2_sim, "config/links/links.yaml")
     default_model_path = os.path.join(unitree_go2_description, "urdf/unitree_go2_robot.xacro")
-    default_world_path = os.path.join(unitree_go2_description, "worlds/default.sdf")
+    default_world_path = os.path.join(unitree_go2_description, "/home/leonciao/PX4-Autopilot/Tools/simulation/gz/worlds/persons.sdf")
 
     declare_use_sim_time = DeclareLaunchArgument(
         "use_sim_time",
